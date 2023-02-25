@@ -6,7 +6,7 @@ import speech_recognition as sr
 from time import time
 from utils import *
 
-exit_phrases = ["quit", "exit", "leave", "stop"]
+EXIT_PHRASES = set(["quit", "exit", "leave", "stop"])
 
 
 def printUserSpeech(text: str):
@@ -58,7 +58,7 @@ class SpeechText:
         if (type(mic) == int):
             self._mic = sr.Microphone(device_index=mic)
             return True
-        elif(type(mic) == str):
+        elif (type(mic) == str):
             micIdx = self._getMicIndex(mic)
             if micIdx is not None:
                 self._mic = sr.Microphone(device_index=micIdx)
@@ -85,7 +85,7 @@ class SpeechText:
         with self._mic as source:
             return self._r.record(source, duration=duration)
 
-    def _listenForAudioBlocking(self) -> sr.AudioData:
+    def _listenForAudioBlocking(self, print_duration=False) -> sr.AudioData:
         '''
         Blocking call which will wait to hear sound
         '''
@@ -98,7 +98,8 @@ class SpeechText:
                     # source,
                     # timeout=10, # Seconds to wait to hear a sound before timeout
                     # phrase_time_limit=8) # Seconds before phrase is cutoff
-                print(f'duration {time()-start}')
+                if print_duration:
+                    print(f'duration {time()-start}')
                 return audio
             except sr.WaitTimeoutError:
                 print("Didn't hear anything")
@@ -126,7 +127,8 @@ class SpeechText:
                 start = time()
                 text = self._r.recognize_google(audio_data)
                 print(f"duration {time()-start} sec")
-                if show: printUserSpeech(text)
+                if show:
+                    printUserSpeech(text)
                 return text
             except sr.UnknownValueError:
                 error("Could not interpret audio")
@@ -141,7 +143,7 @@ if __name__ == "__main__":
         if text is None:
             continue
         query = text.lower()
-        if any(phrase in query for phrase in exit_phrases):
+        if any(phrase in query for phrase in EXIT_PHRASES):
             break
 
     print("\nDone recognizing speech")

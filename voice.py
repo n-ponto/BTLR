@@ -33,16 +33,16 @@ class Voice:
 
 def echo():
     print("Echoing user phrases")
-    from speechText import SpeechText, exit_phrases
+    from speechText import SpeechText, EXIT_PHRASES
     print("Say any of the following to quit")
-    print(exit_phrases)
+    print(EXIT_PHRASES)
     st = SpeechText()
     voice = Voice()
     while True:
         text = st.speechToText(show=True)
         if text is None:
             continue
-        if any(phrase in text.lower() for phrase in exit_phrases):
+        if any(phrase in text.lower() for phrase in EXIT_PHRASES):
             break
         voice.sayBlocking(text)
     print("\nDone echoing")
