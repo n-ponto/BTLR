@@ -1,6 +1,8 @@
 # My Stuff
 *.json
 key.txt
+models/
+logdir/
 
 
 
