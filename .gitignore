@@ -3,6 +3,7 @@
 key.txt
 models/
 logdir/
+wake/data/*
 
 
 

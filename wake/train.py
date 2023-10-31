@@ -1,18 +1,26 @@
-from model import get_model
-from data import get_data
+import model
+import data
 from keras.callbacks import TensorBoard
 from datetime import datetime
+from noise import get_noise
 
-model = get_model()
-model.summary()
-input, output = get_data()
+my_model = model.get_model()
+my_model.summary()
+input, output = data.get_data()
+noise_input, noise_output = get_noise()
 
-model.fit(
+import numpy as np
+input = np.concatenate([input, noise_input])
+output = np.concatenate([output, noise_output])
+assert(len(input) == len(output))
+print(f'samples {len(input)}')
+
+my_model.fit(
     x=input,
     y=output,
     batch_size=5000,
-    epochs=1,
+    epochs=60,
     callbacks=[TensorBoard("logdir")]
 )
 
-model.save(f'models/{datetime.now().strftime("%Y-%m-%d-%H.%M.%S")}-model.keras')
+my_model.save(f'models/{datetime.now().strftime("%Y-%m-%d-%H.%M.%S")}-model.keras')

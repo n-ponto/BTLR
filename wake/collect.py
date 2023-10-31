@@ -2,11 +2,14 @@ import pyaudio
 import wave
 import audioop
 import os
-from wake.utils import FileParams, AudioParams
+from parameters import FileParams, AudioParams
 
 # How loud the audio needs to be to trigger activation
-THRESHOLD_MULTIPLIER = 1.1  # threshold 10% louder than ambient noise
+THRESHOLD_MULTIPLIER = 1.5  # threshold louder than ambient noise
 THRESHOLD_SECONDS = 2  # time to calculate threshold
+THRESHOLD = 400
+
+ALLOWED_SILENCE_SECONDS = 0.3  # allowed time of silence to remain activated
 
 class SampleCollector:
 
@@ -46,24 +49,42 @@ class SampleCollector:
         else:
             print("Please say the wake word...")
 
-        activation = False
+        allowed_silence_frames = int(AudioParams.sample_rate/AudioParams.chunk_size*ALLOWED_SILENCE_SECONDS)
+        silence_frames = 0
+        collecting = False
         frames = []
         i = 0
         while True:
             data = stream.read(AudioParams.chunk_size)
             rms = audioop.rms(data, 2)
             print(str(rms) + '   \t', end='')
-            if activation and rms <= rms_threshold:
-                print('saving   \t', end='')
-                self.save_data(b''.join(frames))
-                i += 1
-                activation = False
-                frames = []
-            elif not activation and rms > rms_threshold:
+            if not collecting and rms > rms_threshold:
+                # New sound activates collection
                 print('activated\t', end='')
-                activation = True
+                collecting = True
+            elif collecting and rms <= rms_threshold:
+                # Silence during collection
+                if silence_frames > allowed_silence_frames:
+                    # Exceeded allowed time, save the sample
+                    print('saving   \t', end='')
+                    self.save_data(b''.join(frames))
+                    i += 1
+                    collecting = False
+                    frames = []
+                    silence_frames = 0
+                else:
+                    # Record that it was silent
+                    silence_frames += 1
+            elif collecting and rms > rms_threshold:
+                # If there was a sound, reset silence frames
+                silence_frames = 0
+            
             print('', end='\r')
-            frames.append(data)
+            if collecting:
+                frames.append(data)
+            else:
+                # Always keep one prefix frame
+                frames = [data]
 
 
     def save_data(self, data):
@@ -73,7 +94,7 @@ class SampleCollector:
         wf = wave.open(filename, 'wb')
         wf.setnchannels(AudioParams.channels)
         wf.setsampwidth(self.sample_size)
-        wf.setframerate(AudioParams.fs)
+        wf.setframerate(AudioParams.sample_rate)
         wf.writeframes(data)
         wf.close()
 
@@ -82,13 +103,14 @@ class SampleCollector:
         self.sample_size = p.get_sample_size(AudioParams.format)
 
         stream = p.open(
-            rate=AudioParams.fs,
+            rate=AudioParams.sample_rate,
             channels=AudioParams.channels,
             format=AudioParams.format,
             frames_per_buffer=AudioParams.chunk_size,
             input=True
         )
-        rms_threshold = self.get_rms_threshold(stream)
+        # rms_threshold = self.get_rms_threshold(stream)
+        rms_threshold = THRESHOLD
 
         try:
             self.collect_wakeword(stream, rms_threshold)
@@ -102,7 +124,7 @@ class SampleCollector:
     @staticmethod
     def get_rms_threshold(stream) -> int:
         print("Please stay quiet...")
-        thresh_steps = int(AudioParams.fs/AudioParams.chunk_size*THRESHOLD_SECONDS)
+        thresh_steps = int(AudioParams.sample_rate/AudioParams.chunk_size*THRESHOLD_SECONDS)
         thresh_max = None
         for _ in range(thresh_steps):
             data = stream.read(AudioParams.chunk_size)
