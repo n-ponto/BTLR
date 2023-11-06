@@ -1,5 +1,6 @@
 """
 Code for loading in the collected data in a format for training
+TODO: I think I don't need this anymore
 """
 from sonopy import mfcc_spec
 from parameters import AudioParams, MycroftParams
@@ -66,7 +67,7 @@ def load_dir(path: str, pos: bool):
     input_parts = [load_file(os.path.join(path, f)) for f in files]
     output_parts = np.array([[pos] for _ in input_parts])
 
-    inputs = np.stack(input_parts, axis=0)  # TODO: figure out how to concat these arrays, maybe look at youtube github
+    inputs = np.stack(input_parts, axis=0)
     outputs = np.concatenate(output_parts, axis=0)
     return inputs, outputs
 

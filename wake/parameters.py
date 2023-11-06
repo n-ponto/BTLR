@@ -8,7 +8,8 @@ class AudioParams:
     format = paInt16  # datatype of
 
 class FileParams:
-    default_data_dir = './data'
+    data_dir = './data'
+    log_dir = './log'
     pos_sample_dir = 'pos'
     neg_sample_dir = 'neg'
 

@@ -2,8 +2,10 @@
 *.json
 key.txt
 models/
-logdir/
-wake/data/*
+wake/log*
+wake/data
+wake/checkpoints
+*.pkl
 
 
 

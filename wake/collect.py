@@ -139,7 +139,7 @@ class SampleCollector:
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('dir', default=FileParams.default_data_dir, nargs='?')
+    parser.add_argument('dir', default=FileParams.data_dir, nargs='?')
     parser.add_argument('-n', '--negative', action='store_true')
     parser.add_argument('--overwrite', action='store_true')
     args = parser.parse_args()
