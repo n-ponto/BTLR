@@ -25,5 +25,5 @@ class MycroftParams:
     n_filt = 20
     n_fft = 512
     n_mfcc = 13
-    chunk_size = 2048
+    chunk_size = 2048  # Mycroft uses 2048 but wraps stream.read to divide by 2 (i.e. 1024, which is what AI-hacker uses)
     format = paInt16
