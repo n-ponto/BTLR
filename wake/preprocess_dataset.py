@@ -5,7 +5,7 @@ preprocess them into numpy arrays. The numpy arrays are saved to disk.
 import argparse
 import os
 from parameters import FileParams as fp
-import load_data
+from preprocessing.dataloader import DataLoader
 import numpy as np
 
 # Parse arguments
@@ -17,9 +17,11 @@ dataset: str = args.dataset
 datasets = ['train', 'test', 'val']
 assert(dataset in datasets), f'Invalid dataset {dataset}. Must be one of {datasets}'
 
-# Load the data
+# Load the files paths from the csv file
 csv_path = os.path.join(fp.data_dir, f'{dataset.lower()}_files.csv')
-X, y = load_data.load_files(csv_path)
+data_loader = DataLoader(csv_path)
+X, y = data_loader.load_data()
+print(f'Loaded {len(X)} samples from {csv_path}')
 
 x_path = os.path.join(fp.data_dir, f'{dataset}_x.npy')
 y_path = os.path.join(fp.data_dir, f'{dataset}_y.npy')

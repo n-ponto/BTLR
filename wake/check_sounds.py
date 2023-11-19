@@ -1,3 +1,9 @@
+'''
+Script to remove bad samples from the positive sample directory.
+
+Plays each file and asks if it should be deleted.
+'''
+
 from pydub import AudioSegment
 from pydub.playback import play
 import os
