@@ -1,6 +1,4 @@
-import wave
 import pyaudio
-import os
 from parameters import MycroftParams as ap
 
 def save_wav_file(filename: str, sample_size: int, data: bytes) -> None:
@@ -11,6 +9,7 @@ def save_wav_file(filename: str, sample_size: int, data: bytes) -> None:
         sample_size: the size of each sample in bytes
         data: the data to save
     """
+    import wave
     wf = wave.open(filename, 'wb')
     wf.setnchannels(1)
     wf.setsampwidth(sample_size)
@@ -42,9 +41,10 @@ def get_greatest_index(dir: str) -> int:
     Returns:
         the index of the last file in the directory
     """
+    import os
     files = os.listdir(dir)
     if len(files) < 1:
-        return 0
+        return -1
     files.sort()
 
     try:

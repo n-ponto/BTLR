@@ -70,7 +70,6 @@ class DataLoader():
                 if len(self._files_to_load) % 10 == 0 and len(self._input_parts) > 0:
                     self._print_progress()
                 file_path, label, augment = self._files_to_load.pop()
-            # Only augment if we are supposed to
             augment = augment and self._augment
             audio = self._pyache.load_file(file_path)
             mfcc = convert_audio(audio,
