@@ -1,5 +1,5 @@
 from listener.listener import Listener
-from model.modelwrapper import get_model_wrapper, ModelWrapper
+from neuralmodels.modelwrapper import get_model_wrapper, ModelWrapper
 
 # MODEL_PATH = './checkpoints/model_GRU_20'
 MODEL_PATH = './trained_model.tflite'

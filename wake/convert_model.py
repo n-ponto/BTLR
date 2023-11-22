@@ -15,7 +15,8 @@ def convert_model(model_path: str, optimizations: list = None, save_path: str = 
     converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
     converter.target_spec.supported_ops = [
         tf.lite.OpsSet.TFLITE_BUILTINS,  # enable TensorFlow Lite ops.
-        tf.lite.OpsSet.SELECT_TF_OPS  # enable TensorFlow ops.
+        # Below needs to be disabled to run on raspberry pi
+        # tf.lite.OpsSet.SELECT_TF_OPS  # enable TensorFlow ops.
     ]
     if optimizations is not None and len(optimizations) > 0:
         converter.optimizations = optimizations

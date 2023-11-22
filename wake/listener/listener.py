@@ -5,7 +5,7 @@ from sonopy import mfcc_spec
 from parameters import MycroftParams as ap
 from listener.activationtrigger import ActivationTrigger
 from audio_collection.utils import create_stream
-from model.modelwrapper import ModelWrapper
+from neuralmodels.modelwrapper import ModelWrapper
 import threading
 
 save_index = None
