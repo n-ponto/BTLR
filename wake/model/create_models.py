@@ -1,3 +1,7 @@
+"""
+Creates different model architectures for testing.
+"""
+
 from keras.models import Sequential
 from keras.layers import GRU, LayerNormalization, Dense
 from keras.losses import binary_crossentropy

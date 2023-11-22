@@ -5,6 +5,7 @@ from sonopy import mfcc_spec
 from parameters import MycroftParams as ap
 from listener.activationtrigger import ActivationTrigger
 from audio_collection.utils import create_stream
+from model.modelwrapper import ModelWrapper
 import threading
 
 save_index = None
@@ -15,7 +16,6 @@ def save_activation(window_audio: np.ndarray, sample_size: int) -> None:
     from audio_collection.utils import save_wav_file
     from audio_collection.utils import get_greatest_index
     import os
-    from parameters import FileParams as fp
     print()
     SAVE_DIR = r".\acivations"
     if not os.path.isdir(SAVE_DIR):
@@ -41,10 +41,11 @@ def save_activation(window_audio: np.ndarray, sample_size: int) -> None:
 
 
 class Listener:
+    _model: ModelWrapper
     window_audio: np.ndarray
     input_features: np.ndarray
 
-    def __init__(self, model):
+    def __init__(self, model: ModelWrapper):
         self._model = model
         self.trigger = ActivationTrigger()
         self.window_audio = np.array([])
@@ -58,6 +59,7 @@ class Listener:
 
     def start_listening(self):
         try:
+            # Start the listener thread
             self._listening = True
             thread = threading.Thread(target=self._listen, daemon=True)
             thread.start()
@@ -67,7 +69,8 @@ class Listener:
             while user_input != 'q':
                 user_input = input('Press q to quit\n')
                 if user_input == 'f':
-                    save_activation(self._last_activation_audio, self.sample_size)
+                    save_activation(
+                        self._last_activation_audio, self.sample_size)
         except KeyboardInterrupt:
             print('ending process')
         finally:
@@ -94,7 +97,7 @@ class Listener:
             mfccs = self._get_features(data)
             assert (mfccs.shape == (ap.n_features, ap.n_mfcc)
                     ), f'mfccs.shape = {mfccs.shape}'
-            prediction = self._predict(mfccs)
+            prediction: float = self._model.predict(mfccs)
             triggered = self.trigger.check_trigger(prediction)
             prediction_str = "." * int(prediction * 20)
             print(f"prediction: {prediction}         ", end='\r')
@@ -104,10 +107,7 @@ class Listener:
             # print(f'prediction: {round(prediction, 3):>7}\t|{prediction_str:<20}|\trms:{rms:<10}  ', end='\r')
             # time.sleep(0.05)
 
-    def _predict(self, mfccs: np.ndarray):
-        return self._model.predict(mfccs[np.newaxis], verbose=0)[0][0]
-
-    def _get_features(self, buffer: bytes):
+    def _get_features(self, buffer: bytes) -> np.ndarray:
         # Convert the buffer to a normalized numpy array
         np_audio = np.fromstring(buffer, dtype='<i2').astype(
             np.float32, order='C') / 32768.0
@@ -136,7 +136,7 @@ class Listener:
             # Add the new features to the end of the existing features
             self.input_features = np.concatenate(
                 (self.input_features[len(new_features):], new_features))
-            
+
         return self.input_features
 
     @staticmethod
