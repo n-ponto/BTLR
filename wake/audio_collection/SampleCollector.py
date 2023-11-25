@@ -11,7 +11,7 @@ from enum import Enum
 import os
 from audio_collection import utils
 import threading
-from parameters import FileParams as fp, MycroftParams as ap
+from parameters import FileParams as fp, mycroftParams as ap
 
 # How loud the audio needs to be to trigger activation
 THRESHOLD_MULTIPLIER = 1.5  # threshold louder than ambient noise

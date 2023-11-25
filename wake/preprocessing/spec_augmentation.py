@@ -1,5 +1,8 @@
 """
-Functions for augmenting the data to generate additional synthetic data
+Function for augmenting spectrograms to generate additional synthetic data
+
+From:
+https://www.kaggle.com/code/davids1992/specaugment-quick-implementation
 """
 
 import numpy as np

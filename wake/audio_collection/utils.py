@@ -1,5 +1,5 @@
 import pyaudio
-from parameters import MycroftParams as ap
+from parameters import mycroftParams as ap
 
 def save_wav_file(filename: str, sample_size: int, data: bytes) -> None:
     """

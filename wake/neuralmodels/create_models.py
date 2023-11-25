@@ -6,6 +6,8 @@ from keras.models import Sequential
 from keras.layers import GRU, LayerNormalization, Dense
 from keras.losses import binary_crossentropy
 from keras.optimizers import Adam
+
+from parameters import AudioParams
 # import tensorflow as tf
 
 n_features = 29  # TODO
@@ -107,7 +109,7 @@ def variable_intermediate_layer_model(intermediate_units=5):
     return model
 
 
-def cnn_model():
+def cnn_model(ap: AudioParams):
     import tensorflow as tf
     from tensorflow.keras import layers
     from tensorflow.keras import models
@@ -117,7 +119,7 @@ def cnn_model():
     # with `Normalization.adapt`.
     # norm_layer.adapt(data=train_spectrogram_ds.map(map_func=lambda spec, label: spec))
 
-    input_shape = (n_features, feature_size)
+    input_shape = (ap.n_features, ap.n_mfcc)
 
     model = models.Sequential([
         layers.Input(shape=input_shape),
@@ -138,6 +140,46 @@ def cnn_model():
     model.compile(
         optimizer=tf.keras.optimizers.Adam(),
         loss=binary_crossentropy,
+        metrics=['accuracy'],
+    )
+
+    return model
+
+
+def smaller_cnn(ap: AudioParams):
+    """
+    As of 11/24/023 this seems to be the best model
+    """
+    import tensorflow as tf
+    from tensorflow.keras import layers
+    from tensorflow.keras import models
+    # Instantiate the `tf.keras.layers.Normalization` layer.
+    norm_layer = layers.Normalization()
+    # Fit the state of the layer to the spectrograms
+    # with `Normalization.adapt`.
+    # norm_layer.adapt(data=train_spectrogram_ds.map(map_func=lambda spec, label: spec))
+
+    input_shape = (ap.n_features, ap.n_mfcc)
+
+    model = models.Sequential([
+        layers.Input(shape=input_shape),
+        # Downsample the input.
+        # layers.Resizing(32, 32),
+        # Normalize.
+        norm_layer,
+        layers.Conv1D(16, 3, activation='relu'),
+        layers.Conv1D(32, 3, activation='relu'),
+        layers.MaxPooling1D(),
+        layers.Dropout(0.25),
+        layers.Flatten(),
+        layers.Dense(128, activation='relu'),
+        layers.Dropout(0.5),
+        layers.Dense(1, activation='sigmoid'),
+    ], name='smaller_cnn')
+
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(),
+        loss=tf.keras.losses.binary_crossentropy,
         metrics=['accuracy'],
     )
 

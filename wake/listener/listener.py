@@ -2,7 +2,7 @@ import audioop
 import time
 import numpy as np
 from sonopy import mfcc_spec
-from parameters import MycroftParams as ap
+from parameters import AudioParams
 from listener.activationtrigger import ActivationTrigger
 from audio_collection.utils import create_stream
 from neuralmodels.modelwrapper import ModelWrapper
@@ -45,7 +45,7 @@ class Listener:
     window_audio: np.ndarray
     input_features: np.ndarray
 
-    def __init__(self, model: ModelWrapper):
+    def __init__(self, model: ModelWrapper, ap: AudioParams):
         self._model = model
         self.trigger = ActivationTrigger()
         self.window_audio = np.array([])
@@ -56,6 +56,7 @@ class Listener:
         self._p = None
         self._listening = False
         self._last_activation_audio = None
+        self._ap = ap
 
     def start_listening(self):
         try:
@@ -89,18 +90,18 @@ class Listener:
 
     def _listen(self):
         self._p, self._stream = create_stream()
-        self.sample_size = self._p.get_sample_size(ap.format)
+        self.sample_size = self._p.get_sample_size(self._ap.format)
         print(f"Sample size = {self.sample_size}")
         while self._listening:
-            data = self._stream.read(ap.chunk_size, False)
+            data = self._stream.read(self._ap.chunk_size, False)
             rms = audioop.rms(data, 2)
             mfccs = self._get_features(data)
-            assert (mfccs.shape == (ap.n_features, ap.n_mfcc)
+            assert (mfccs.shape == (self._ap.n_features, self._ap.n_mfcc)
                     ), f'mfccs.shape = {mfccs.shape}'
             prediction: float = self._model.predict(mfccs)
             triggered = self.trigger.check_trigger(prediction)
-            prediction_str = "." * int(prediction * 20)
             print(f"prediction: {prediction}         ", end='\r')
+            # prediction_str = "." * int(prediction * 20)
             if (triggered):
                 print("WAKE UP!!!")
                 self._last_activation_audio = self.feature_audio.copy()
@@ -114,12 +115,12 @@ class Listener:
         self.window_audio = np.concatenate((self.window_audio, np_audio))
 
         # If there are enough samples, extract new MFCC features
-        if len(self.window_audio) >= ap.window_samples:
+        if len(self.window_audio) >= self._ap.window_samples:
             # Convert audio into MFCC features
             new_features = self._get_mfccs(self.window_audio)
 
             # The number of audio frames used to create the new_features
-            audio_frames_used: int = len(new_features) * ap.hop_samples
+            audio_frames_used: int = len(new_features) * self._ap.hop_samples
             new_features_audio: np.ndarray = self.window_audio[:audio_frames_used]
 
             # Save the audio associated with the new features
@@ -139,11 +140,10 @@ class Listener:
 
         return self.input_features
 
-    @staticmethod
-    def _get_mfccs(window_audio: np.ndarray):
+    def _get_mfccs(self, window_audio: np.ndarray):
         return mfcc_spec(audio=window_audio,
-                         sample_rate=ap.sample_rate,
-                         window_stride=(ap.window_samples, ap.hop_samples),
-                         num_filt=ap.n_filt,
-                         fft_size=ap.n_fft,
-                         num_coeffs=ap.n_mfcc)
+                         sample_rate=self._ap.sample_rate,
+                         window_stride=(self._ap.window_samples, self._ap.hop_samples),
+                         num_filt=self._ap.n_filt,
+                         fft_size=self._ap.n_fft,
+                         num_coeffs=self._ap.n_mfcc)

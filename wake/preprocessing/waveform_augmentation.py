@@ -1,6 +1,6 @@
 import numpy as np
 import librosa
-from parameters import MycroftParams as ap
+from parameters import mycroftParams as ap
 
 def noise_injection(audio: np.ndarray, noise_factor=0.005):
     """

@@ -2,15 +2,12 @@
 Functions to convert raw audio to MFCC data including data augmentation
 """
 from enum import Enum
-from parameters import MycroftParams as ap
 from sonopy import mfcc_spec as sonopy_mfcc_spec
 import numpy as np
+
+from parameters import AudioParams
 from preprocessing.spec_augmentation import spec_augment
 from preprocessing.waveform_augmentation import noise_injection, change_speed, change_pitch
-
-# The maximum number of samples that fit into a single input to the model
-MAX_SAMPLES = (ap.n_features - 1) * ap.hop_samples + ap.window_samples
-assert (MAX_SAMPLES == 24000 and MAX_SAMPLES == ap.sample_rate * 1.5)
 
 
 class AugmentationType(Enum):
@@ -27,7 +24,7 @@ class AugmentationType(Enum):
     NONE = 4
 
 
-def convert_audio(audio: np.ndarray, trim_beginning=False, augment=True):
+def convert_audio(audio: np.ndarray, params: AudioParams, trim_beginning=False, augment=True):
     """
     Takes raw audio and augments the data, outputting the MFCC shaped for input
     into the model
@@ -44,12 +41,13 @@ def convert_audio(audio: np.ndarray, trim_beginning=False, augment=True):
         augmentation_type = np.random.choice(list(AugmentationType))
     else:
         augmentation_type = AugmentationType.NONE
-    mfcc = convert_audio_helper(audio, trim_beginning, augmentation_type)
+    mfcc = convert_audio_helper(
+        audio, trim_beginning, augmentation_type, params)
 
     return mfcc
 
 
-def convert_audio_helper(audio: np.ndarray, trim_beginning: bool, augmentation_type: AugmentationType):
+def convert_audio_helper(audio: np.ndarray, trim_beginning: bool, augmentation_type: AugmentationType, ap: AudioParams):
     """
     Takes raw audio and augments the data, outputting the MFCC shaped for input
     into the model
@@ -75,18 +73,18 @@ def convert_audio_helper(audio: np.ndarray, trim_beginning: bool, augmentation_t
 
     # Trim beginning of audio if too long so will fit into single input to model
     if trim_beginning:
-        if len(audio) > MAX_SAMPLES:
-            audio = audio[-MAX_SAMPLES:]
+        if len(audio) > ap.buffer_samples:
+            audio = audio[-ap.buffer_samples:]
 
     # convert to MFCC
-    mfcc = get_mfcc(audio)
+    mfcc = calculate_mfccs(audio, ap)
 
     # If spectrogram augmentation
     if augmentation_type == AugmentationType.SPEC_AUGMENT:
         mfcc = spec_augment(mfcc)
 
     # Reshape to fit into model
-    mfcc = reshape_mfcc(mfcc)
+    mfcc = reshape_mfcc(mfcc, ap)
 
     if trim_beginning:
         assert (
@@ -94,7 +92,7 @@ def convert_audio_helper(audio: np.ndarray, trim_beginning: bool, augmentation_t
     return mfcc
 
 
-def reshape_mfcc(mfcc: np.ndarray):
+def reshape_mfcc(mfcc: np.ndarray, ap: AudioParams):
     """
     Reshapes the MFCC to fit into the model
     Args:
@@ -102,12 +100,12 @@ def reshape_mfcc(mfcc: np.ndarray):
     Returns:
         MFCC data reshaped to fit into the model
     """
-    padded_mfcc = pad_beginning(mfcc)
+    padded_mfcc = pad_beginning(mfcc, ap)
     input_data = np.reshape(padded_mfcc, (-1, ap.n_features, ap.n_mfcc))
     return input_data
 
 
-def pad_beginning(mfcc):
+def pad_beginning(mfcc, ap: AudioParams):
     """
     Pads the beginning of the MFCC with zeros so it will fit into the model
     Args:
@@ -128,7 +126,7 @@ def pad_beginning(mfcc):
     return mfcc
 
 
-def get_mfcc(audio: np.ndarray):
+def calculate_mfccs(audio: np.ndarray, ap: AudioParams):
     """
     Converts raw audio to MFCC data
     Args:

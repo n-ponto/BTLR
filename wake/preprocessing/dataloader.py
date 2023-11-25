@@ -4,9 +4,10 @@ import librosa
 from preprocessing.audio_conversion import convert_audio
 import threading
 from pyache import Pyache
+from parameters import AudioParams
 import time
 
-NUMBER_THREADS = 4  # Number of threads to use for loading the data
+NUMBER_THREADS = 2  # Number of threads to use for loading the data
 
 
 class DataLoader():
@@ -21,11 +22,13 @@ class DataLoader():
     _input_parts: list[np.ndarray] = []  # List of input data parts
     _output_parts: list[np.ndarray] = []  # List of output data parts
     _lock = threading.Lock()  # Lock for accessing the list of files to load
+    _start_time: float  # Time when the loading started
+    _audioParams: AudioParams  # Parameters for audio conversion
 
     _input = None  # Input data
     _output = None  # Output data
 
-    def __init__(self, csv_path: str, augment: bool = True):
+    def __init__(self, csv_path: str, ap: AudioParams, augment: bool = True):
         with open(csv_path, newline='') as f:
             reader = csv.reader(f)
             self._files_to_load = [(f, bool(int(o)), bool(int(a)))
@@ -33,7 +36,8 @@ class DataLoader():
             print(f'Found {len(self._files_to_load)} files in {csv_path}')
         self._total_files = len(self._files_to_load)
         self._augment = augment
-        self._pyache = Pyache('.cache', load_audio_from_file, 'audio_loader')
+        self._audioParams = ap
+        self._pyache = Pyache('.cache', self._load_audio_from_file, f'audio_loader_{ap.sample_rate}')
 
     def load_data(self):
         """
@@ -73,6 +77,7 @@ class DataLoader():
             augment = augment and self._augment
             audio = self._pyache.load_file(file_path)
             mfcc = convert_audio(audio,
+                                 self._audioParams,
                                  trim_beginning=label,  # If positive sample, trim the beginning
                                  augment=augment)
 
@@ -101,18 +106,18 @@ class DataLoader():
         print(f'{percent_complete:>2}%\telapsed = {elapsed_string}\testimated remaining = {remaining_string}  ', end='\r')
 
 
-def load_audio_from_file(file_path: str):
-    """
-    Loads the audio from the given file.
-    Args:
-        file_path: Path to the audio file
-    Returns:
-        Audio data
-    """
-    # Load audio from file
-    audio, sr = librosa.load(file_path, sr=None)
-    # Convert to mono
-    audio = librosa.to_mono(audio)
-    # Convert to float32
-    audio = audio.astype(np.float32)
-    return audio
+    def _load_audio_from_file(self, file_path: str):
+        """
+        Loads the audio from the given file.
+        Args:
+            file_path: Path to the audio file
+        Returns:
+            Audio data
+        """
+        # Load audio from file
+        audio, _ = librosa.load(file_path, sr=self._audioParams.sample_rate)
+        # Convert to mono
+        audio = librosa.to_mono(audio)
+        # Convert to float32
+        audio = audio.astype(np.float32)
+        return audio
