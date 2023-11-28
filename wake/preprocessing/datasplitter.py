@@ -1,15 +1,17 @@
-from parameters import FileParams as fp
 import os
 import random
 import csv
 from tqdm import tqdm
-from preprocessing.durationcache import DurationCache
+from wake.parameters import FileParams as fp
+from .durationcache import DurationCache
 
 VALID_FILE_TYPES = ['.wav', '.mp3']
 
 TRAIN_DIR = "train"
 VAL_DIR = "val"
 TEST_DIR = "test"
+
+RANDOM_SEED = 0
 
 
 class DataSplitter:
@@ -32,11 +34,10 @@ class DataSplitter:
         self.durationCache = DurationCache(cache_location)
 
     def split_data(self):
-        random.seed(0)
+        random.seed(RANDOM_SEED)
 
         # Split each of the subdirectories into train, val, and test datasets
         subdir_datasets = self._get_subdir_datasets()
-        print()
 
         # Figure out the duration of each of the train sets
         train_durations = self._get_train_durations(subdir_datasets)
@@ -54,21 +55,34 @@ class DataSplitter:
         self._save_dataset_splits(positive_dataset, negative_datasets)
 
     def _get_subdir_datasets(self):
+        """
+        Creates a mapping of each subdirectory within the data directory to a
+        tuple of lists of file paths (train, val, test)
+        Returns:
+            dict of {subdirectory -> (train, val, test)}
+        """
+        # Switch to the data directory
+        os.chdir(fp.data_dir)
         subdirs = os.listdir(fp.data_dir)
         subdir_datasets = {}
 
         # Split the files into train, val, and test datasets
         for subdir in subdirs:
-            subdir_path = os.path.join(fp.data_dir, subdir)
-            if not os.path.isdir(subdir_path):
-                print(f'ignoring: {subdir_path} is not a directory')
+            if not os.path.isdir(subdir):
+                print(f'ignoring: {subdir} is not a directory')
                 continue
 
-            files = os.listdir(subdir_path)
-            files = [os.path.join(subdir_path, x) for x in files]
-            files = [x for x in files if os.path.isfile(x)]  # Only keep files
+            files = os.listdir(subdir)
+            files = [os.path.join(subdir, x) for x in files]
+
+            # Only include files with valid extensions
+            files = [x for x in files if os.path.isfile(x) and
+                     any([x.lower().endswith(y) for y in VALID_FILE_TYPES])]
 
             datasets = self._split_files(files)
+            if datasets is None:
+                print(f'ignoring: {subdir} has no valid files')
+                continue
             subdir_datasets[subdir] = datasets
         return subdir_datasets
 
@@ -82,10 +96,10 @@ class DataSplitter:
         """
         train_durations = {}
         for subdir, datasets in subdir_datasets.items():
-            train = datasets[0]
-            print(f'Getting duration of {subdir} train set...')
+            train_dataset = datasets[0]
+            print(f'\nGetting duration of {subdir} train set...')
             total_duration = self._get_total_duration(
-                train, self.durationCache)
+                train_dataset, self.durationCache)
             print(f'{subdir} total duration {round(total_duration)} seconds')
             train_durations[subdir] = total_duration
         return train_durations
@@ -110,8 +124,9 @@ class DataSplitter:
             if subdir not in self.my_directories:
                 continue
             duration = train_durations[subdir]
-            percent_of_total = duration / total_train_duration
-            print(f'{subdir} makes up {round(percent_of_total * 100, 2)}% of total')
+            percent_of_total = duration / total_train_duration if total_train_duration > 0 else 0
+            print(
+                f'\n{subdir} makes up {round(percent_of_total * 100, 2)}% of total')
             multiplier = round(total_other_duration / duration)
             print(f'{subdir} multiplier: {multiplier}')
             subdir_datasets[subdir] = (train * multiplier, val, test)
@@ -139,6 +154,8 @@ class DataSplitter:
         Returns:
             A tuple of lists of file paths (train, val, test)
         """
+        if len(files) == 0:
+            return None
         random.shuffle(files)
         # Split into datasets
         count_train = int(len(files) * self.train_percent)
@@ -158,11 +175,12 @@ class DataSplitter:
         """
         directories = [TRAIN_DIR, VAL_DIR, TEST_DIR]
 
-        assert(len(pos_dataset) == len(directories))
-        assert(len(neg_datasets[0][0]) == len(directories))
-        assert(type(neg_datasets[0][0]) == tuple), f'{type(neg_datasets[0][0])}'
-        assert(type(neg_datasets[0][1]) == bool)
-        assert(type(neg_datasets[0][0][0]) == list)
+        assert (len(pos_dataset) == len(directories))
+        assert (len(neg_datasets[0][0]) == len(directories))
+        assert (type(neg_datasets[0][0]) ==
+                tuple), f'{type(neg_datasets[0][0])}'
+        assert (type(neg_datasets[0][1]) == bool)
+        assert (type(neg_datasets[0][0][0]) == list)
 
         for i, dir in enumerate(directories):
             # Get the positive and negative files corresponding to the dataset type (either train, val, or test)
@@ -170,10 +188,10 @@ class DataSplitter:
             neg_files = []
             for datasets, augment in neg_datasets:
                 data = datasets[i]
-                assert(type(data) == list)
+                assert (type(data) == list)
                 neg_files.extend([(f, augment) for f in data])
 
-            assert(type(neg_files) == list)
+            assert (type(neg_files) == list)
 
             # Columns are: file_path, label, augment
             allow_augment = dir == TRAIN_DIR  # Only augment the training set

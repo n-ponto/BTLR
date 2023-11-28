@@ -1,7 +1,7 @@
 import pyaudio
-from parameters import mycroftParams as ap
+from wake import parameters
 
-def save_wav_file(filename: str, sample_size: int, data: bytes) -> None:
+def save_wav_file(filename: str, sample_size: int, sample_rate: int, data: bytes) -> None:
     """
     Saves a wav file.
     Args:
@@ -13,13 +13,16 @@ def save_wav_file(filename: str, sample_size: int, data: bytes) -> None:
     wf = wave.open(filename, 'wb')
     wf.setnchannels(1)
     wf.setsampwidth(sample_size)
-    wf.setframerate(ap.sample_rate)
+    wf.setframerate(sample_rate)
     wf.writeframes(data)
     wf.close()
 
-def create_stream() -> (pyaudio.PyAudio, pyaudio.Stream):
+
+def create_stream(ap: parameters.AudioParams) -> (pyaudio.PyAudio, pyaudio.Stream):
     """
     Creates a pyaudio stream to record audio.
+    Args:
+        ap: the audio parameters
     Returns:
         the pyaudio object and the stream object
     """
@@ -32,6 +35,7 @@ def create_stream() -> (pyaudio.PyAudio, pyaudio.Stream):
         input=True
     )
     return p, stream
+
 
 def get_greatest_index(dir: str) -> int:
     """

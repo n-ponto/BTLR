@@ -1,7 +1,7 @@
 import pickle
 import os
 import librosa
-from parameters import mycroftParams as ap
+from wake.parameters import mycroftParams as ap
 
 MIN_FILE_DURATION = ((ap.n_features - 1) * ap.hop_samples +
                      ap.window_samples) / ap.sample_rate

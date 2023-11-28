@@ -40,6 +40,6 @@ def convert_model(model_path: str, optimizations: list = None, save_path: str = 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('model_path', type=str, help='Path to the model')
+    parser.add_argument('model_path', type=str, help='Path to the keras model')
     args = parser.parse_args()
     convert_model(args.model_path, [tf.lite.Optimize.DEFAULT], 'trained_model.tflite')

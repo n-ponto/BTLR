@@ -8,8 +8,9 @@ from pydub import AudioSegment
 from pydub.playback import play
 import os
 
-dir = "C:\\Users\\noah\\repos\\BTLR\\wake\\data\\pos"
+dir = "..\\data\\pos"
 
+print(f'Press enter to keep the file, press any other key then enter to delete it.')
 for file in os.listdir(dir):
     path = os.path.join(dir, file)
     audio = AudioSegment.from_wav(path)

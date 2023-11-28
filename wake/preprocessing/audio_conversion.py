@@ -5,9 +5,9 @@ from enum import Enum
 from sonopy import mfcc_spec as sonopy_mfcc_spec
 import numpy as np
 
-from parameters import AudioParams
-from preprocessing.spec_augmentation import spec_augment
-from preprocessing.waveform_augmentation import noise_injection, change_speed, change_pitch
+from wake.parameters import AudioParams
+from .spec_augmentation import spec_augment
+from .waveform_augmentation import *
 
 
 class AugmentationType(Enum):

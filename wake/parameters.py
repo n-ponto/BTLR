@@ -3,13 +3,15 @@ import pyaudio
 
 
 class FileParams:
-    data_dir = './data'
-    log_dir = './log'
+    data_dir = '../data'
+    log_dir = '../log'
     pos_sample_dir = 'pos'
     neg_sample_dir = 'neg'
 
     pos_file_name = 'pos'
     neg_file_name = 'neg'
+
+    default_model_path = 'wake/trained_model.tflite'
 
 
 class AudioParams:
@@ -129,8 +131,10 @@ customParams2 = AudioParams(
     n_mfcc=13
 )
 
-parameters = {
+different_parameters: dict = {
     'mycroft': mycroftParams,
     'custom1': customParams1,
     'custom2': customParams2
 }
+
+DEFAULT_AUDIO_PARAMS: AudioParams = mycroftParams

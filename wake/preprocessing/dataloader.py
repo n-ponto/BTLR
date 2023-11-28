@@ -1,10 +1,10 @@
 import csv
 import numpy as np
 import librosa
-from preprocessing.audio_conversion import convert_audio
+from wake.preprocessing.audio_conversion import convert_audio
 import threading
 from pyache import Pyache
-from parameters import AudioParams
+from wake.parameters import AudioParams
 import time
 
 NUMBER_THREADS = 2  # Number of threads to use for loading the data

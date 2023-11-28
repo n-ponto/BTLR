@@ -1,1 +1,1 @@
-from .create_models import *
+from .modelwrapper import ModelWrapper, get_model_wrapper

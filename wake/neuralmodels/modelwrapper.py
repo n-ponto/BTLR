@@ -29,14 +29,17 @@ class ModelWrapper:
         Returns:
             A float between 0 and 1, where 0 means the input is not the wake word, and 1 means it is.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 def get_model_wrapper(model_path: str) -> ModelWrapper:
     """
     Returns a model wrapper object based on the model path.
     """
+    import os
     running_on_pi = is_pi()
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f'Could not find model: {model_path}')
     if model_path.endswith('.tflite'):
         return TFLiteModelWrapper(model_path, running_on_pi)
     else:
