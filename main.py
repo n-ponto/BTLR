@@ -1,56 +1,45 @@
 import wake
-from enum import Enum
-import commandlistener
-import os
 import speech_recognition as sr
-
-ap = wake.parameters.DEFAULT_AUDIO_PARAMS
-
-stop_keywords: list = ['stop', 'quit', 'exit', 'terminate', 'end', 'finish', 'done']
+from command_handling import CommandListener, CommandHandler
 
 # Create the listener
-p, stream = wake.create_stream(ap)
+ap = wake.parameters.DEFAULT_AUDIO_PARAMS
+pyaudio, stream = wake.audio_collection.utils.create_stream(ap)
 wake_listener = wake.WakeListener()
-command_listener = commandlistener.CommandListener()
-
-class ListeningState(Enum):
-    ASLEEP = 0
-    AWAKE = 1
-
-current_state = ListeningState.ASLEEP
-SAVE_DIR = './commands'
-if not os.path.isdir(SAVE_DIR):
-    os.mkdir(SAVE_DIR)
-    print(f"Created directory {SAVE_DIR}")
-
-save_index = wake.utils.get_greatest_index(SAVE_DIR) + 1
-
+command_listener = CommandListener()
+sample_size = pyaudio.get_sample_size(ap.format)
+command_handler = CommandHandler(wake_listener, sample_size, ap.sample_rate)
+state_asleep = True
 recognizer = sr.Recognizer()
 
 continue_listening = True
 
 while continue_listening:
     data = stream.read(ap.chunk_size, False)
-    if current_state == ListeningState.ASLEEP:
+    if state_asleep:
         triggered = wake_listener.check_wake(data)
         if triggered:
             print('WAKE!!!')
-            current_state = ListeningState.AWAKE
+            state_asleep = False  # Wake up and listen for command
     else:
         command_done = command_listener.listen(data)
         if command_done:
             print('Command done!')
+            state_asleep = True  # Go back to sleep after processing command
             command_audio = command_listener.get_audio()
-            # For now save the audio to a file
-            # # filename = f"{SAVE_DIR}\\activation-{save_index}.wav"
-            # # wake.utils.save_wav_file(filename, p.get_sample_size(ap.format), ap.sample_rate, command_audio)
-            # # print(f"Saved activation {filename}")
-            # save_index += 1
-            print('Waiting on speech recognition...')
-            audio_data = sr.AudioData(command_audio, ap.sample_rate, p.get_sample_size(ap.format))
-            text = recognizer.recognize_google(audio_data).lower()
+
+            # Convert speech to text
+            try:
+                print('Waiting on speech recognition...')
+                audio_data = sr.AudioData(
+                    command_audio, ap.sample_rate, pyaudio.get_sample_size(ap.format))
+                text = recognizer.recognize_google(audio_data).lower()
+            except sr.UnknownValueError:
+                print('Could not understand audio')
+                continue
+            except sr.RequestError as e:
+                print(f'Request error: {e}')
+                continue
+
             print(text)
-            current_state = ListeningState.ASLEEP
-            if any([keyword in text for keyword in stop_keywords]):
-                continue_listening = False
-                print('Stopping...')
+            command_handler.handle(text)

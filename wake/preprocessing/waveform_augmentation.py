@@ -1,6 +1,7 @@
 import numpy as np
 import librosa
 
+
 def noise_injection(audio: np.ndarray, noise_factor=0.005):
     """
     Adds random noise to the audio
@@ -28,21 +29,26 @@ def change_pitch(audio, sample_rate: int, pitch_factor=0.4):
     """
     return librosa.effects.pitch_shift(audio, sr=sample_rate, n_steps=pitch_factor)
 
+
 if __name__ == "__main__":
     print('demo of waveform_augmentation.py')
     import sounddevice as sd
     import time
 
     # Get the default audio parameters
-    import sys, os
-    sys.path.append('C:\\Users\\noah\\repos\\BTLR\\wake')
+    import sys
+    import os
+    path_to_wake = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..'))
+    sys.path.append(path_to_wake)
     from parameters import DEFAULT_AUDIO_PARAMS
     sample_rate = DEFAULT_AUDIO_PARAMS.sample_rate
     print(f'sample_rate = {sample_rate}')
 
     # load audio
-    path = "C:\\Users\\noah\\repos\\BTLR\\wake\\data\\pos\\pos-0000.wav"
-    assert(os.path.exists(path) and os.path.isfile(path)), f'path {path} does not exist'
+    path = os.path.join(path_to_wake, 'data', 'pos', 'pos-0000.wav')
+    assert (os.path.exists(path) and os.path.isfile(
+        path)), f'path {path} does not exist'
     audio, _ = librosa.load(path, sr=sample_rate)
     print('loaded audio')
     audio = np.squeeze(audio)

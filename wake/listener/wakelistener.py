@@ -41,12 +41,20 @@ class WakeListener:
         prediction: float = self._model.predict(mfccs)
         print(f'prediction: {round(prediction, 5):>10}', end='\r')
         triggered = self.trigger.check_trigger(prediction)
+        if triggered:
+            self._last_activation_audio = self.feature_audio
         return triggered
 
     def get_last_activation(self) -> bytes:
         """
         Returns the audio corresponding to the last wake word activation.
+        Returns:
+            the audio corresponding to the last wake word activation
+        Raises:
+            Exception: if there is no activation to return
         """
+        if self._last_activation_audio is None:
+            raise Exception('No activation to return')
         bytes_audio = (self._last_activation_audio *
                        32768.0).astype(np.int16).tobytes()
         return bytes_audio

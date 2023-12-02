@@ -4,17 +4,6 @@ Makes it easier to use different models for prediction without changing the code
 import numpy as np
 
 
-def is_pi():
-    """
-    Check if running on a raspberry pi.
-    Returns True if running on a raspberry pi, False otherwise.
-    """
-    import os
-    os_name = os.name
-    print(f'os_name = {os_name}')
-    return os.name != 'nt'
-
-
 class ModelWrapper:
     """
     Wrapper around the model to make it easier to use different models for 
@@ -32,11 +21,25 @@ class ModelWrapper:
         raise NotImplementedError()
 
 
+def import_is_pi():
+    """
+    Imports is_pi from utils. This is done in a function so that the import is only done when needed.
+    """
+    import sys
+    import os
+    path_to_wake = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', '..'))
+    sys.path.append(path_to_wake)
+    from utils import is_pi
+    return is_pi
+
+
 def get_model_wrapper(model_path: str) -> ModelWrapper:
     """
     Returns a model wrapper object based on the model path.
     """
     import os
+    is_pi = import_is_pi()
     running_on_pi = is_pi()
     if not os.path.exists(model_path):
         raise FileNotFoundError(f'Could not find model: {model_path}')

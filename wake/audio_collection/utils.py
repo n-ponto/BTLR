@@ -1,6 +1,7 @@
 import pyaudio
 from wake import parameters
 
+
 def save_wav_file(filename: str, sample_size: int, sample_rate: int, data: bytes) -> None:
     """
     Saves a wav file.
