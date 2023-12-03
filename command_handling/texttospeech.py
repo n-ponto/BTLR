@@ -1,7 +1,6 @@
 from gtts import gTTS
 from tempfile import NamedTemporaryFile
 import pygame
-import utils
 
 DEFAULT_LANG = 'en'
 DEFAULT_ACCENT = 'co.uk'
@@ -17,6 +16,7 @@ class TextToSpeech:
             pygame.mixer.init()
 
     def speak(txt: str) -> None:
+        """Speaks the given text."""
         pass
 
     def speak_windows(self, txt):
@@ -43,6 +43,7 @@ class TextToSpeech:
 
 
 if __name__ == "__main__":
+    import utils
     txt = 'hello there. this is an example'
     on_pi = utils.is_pi()
     print('On raspberry pi: ', on_pi)

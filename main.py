@@ -1,6 +1,7 @@
 import wake
 import speech_recognition as sr
 from command_handling import CommandListener, CommandHandler
+import utils
 
 # Create the listener
 ap = wake.parameters.DEFAULT_AUDIO_PARAMS
@@ -8,7 +9,7 @@ pyaudio, stream = wake.audio_collection.utils.create_stream(ap)
 wake_listener = wake.WakeListener()
 command_listener = CommandListener()
 sample_size = pyaudio.get_sample_size(ap.format)
-command_handler = CommandHandler(wake_listener, sample_size, ap.sample_rate)
+command_handler = CommandHandler(wake_listener, sample_size, ap.sample_rate, utils.is_pi())
 state_asleep = True
 recognizer = sr.Recognizer()
 

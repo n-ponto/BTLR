@@ -1,5 +1,7 @@
-import wake
+import datetime
 from .activationsaver import ActivationSaver
+from .texttospeech import TextToSpeech
+from .weather import Weather
 
 
 class Keywords:
@@ -8,29 +10,45 @@ class Keywords:
         'wake', 'activation', 'trigger']}
     weather: set = {'weather', 'temperature'}
 
+
 class CommandHandler:
-    def __init__(self, wake_listener: wake.WakeListener, sample_size: int, sample_rate: int):
+    def __init__(self, wake_listener, sample_size: int, sample_rate: int, is_pi: bool, save_activations: bool):
         """
         Creates a new CommandHandler.
         Args:
-            wake_listener: the wake listener to use
+            wake_listener: the wake listener to use (`wake.WakeListener` instance)
             sample_size: the sample size (Bytes) of the audio
             sample_rate: the sample rate (Hz) of the audio
         """
         self.wake_listener = wake_listener
-        self.activation_saver = ActivationSaver(sample_size=sample_size,
-                                                sample_rate=sample_rate)
+        self.save_activations = save_activations
+        if self.save_activations:
+            self.activation_saver = ActivationSaver(sample_size=sample_size,
+                                                    sample_rate=sample_rate)
+        else:
+            self.activation_saver = None
+        self.tts = TextToSpeech(is_pi)
+        self.weather = Weather()
 
     def handle(self, command_text: str) -> None:
         """Handles the given command text."""
-        if self._text_contains(command_text, Keywords.stop):
+        if self._keywords_in_command(command_text, Keywords.stop):
             print('Stopping...')
             exit(0)
-        elif self._text_contains(command_text, Keywords.false_activation):
+        elif self._keywords_in_command(command_text, Keywords.false_activation):
             print('False activation detected')
             self._save_last_activation(False)
-        elif self._text_contains(command_text, Keywords.weather):
-            print('Weather command detected')
+        elif self._keywords_in_command(command_text, Keywords.weather):
+            weather = self.weather.get_weather()
+            self.tts.speak(weather)
+        elif 'date' in command_text:
+            today = datetime.date.today()
+            readable_date = today.strftime("%B %d, %Y")
+            self.tts.speak(readable_date)
+        elif 'time' in command_text:
+            now = datetime.datetime.now()
+            readable_time = now.strftime("%I:%M %p")
+            self.tts.speak(readable_time)
         else:
             print('Unknown command')
             return
@@ -43,11 +61,13 @@ class CommandHandler:
         Args:
             correct_activation: whether the activation was a correct activation
         """
+        if self.wake_listener is None or self.save_activations is False:
+            return
         activation_audio = self.wake_listener.get_last_activation()
         self.activation_saver.save(activation_audio, correct_activation)
 
     @staticmethod
-    def _text_contains(text: str, keywords: set) -> bool:
+    def _keywords_in_command(text: str, keywords: set) -> bool:
         """
         Checks whether the text contains any of the keywords.
         Args:
