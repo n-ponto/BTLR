@@ -1,4 +1,5 @@
 import wake
+import os
 
 
 FALSE_ACTIVATION_DIR = './wake/data/false_activations'
@@ -9,6 +10,12 @@ class ActivationSaver:
     def __init__(self, sample_size:  int, sample_rate: int):
         self.pos_save_dir = TRUE_ACTIVATION_DIR
         self.neg_save_dir = FALSE_ACTIVATION_DIR
+
+        # Create the save directories
+        for dir in [self.pos_save_dir, self.neg_save_dir]:
+            if not os.path.exists(dir):
+                os.mkdir(dir)
+        
         self.pos_save_idx = wake.audio_collection.get_greatest_index(
             self.pos_save_dir) + 1
         self.neg_save_idx = wake.audio_collection.get_greatest_index(
