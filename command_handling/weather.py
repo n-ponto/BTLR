@@ -31,7 +31,7 @@ class Weather:
         
         description = f'Right now it\'s {weather.current.description}'
         description += f' and {weather.current.temperature}°,'
-        description += f' with a low today of {todays_low}° and a high of {todays_high}°.'
+        description += f' with a low today of {todays_low} and a high of {todays_high}.'
         return description
 
     async def _update_weather(self):

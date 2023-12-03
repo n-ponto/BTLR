@@ -1,9 +1,10 @@
 from gtts import gTTS
-from tempfile import NamedTemporaryFile
-import pygame
+import tempfile
+from pygame import mixer
+import os
 
 DEFAULT_LANG = 'en'
-DEFAULT_ACCENT = 'co.uk'
+DEFAULT_ACCENT = 'us'  # co.uk
 
 
 class TextToSpeech:
@@ -12,40 +13,55 @@ class TextToSpeech:
         self.lang = lang
         self.tld = tld
         self.speak = self.speak_pi if on_pi else self.speak_windows
-        if on_pi:
-            pygame.mixer.init()
+        mixer.init()
 
     def speak(txt: str) -> None:
         """Speaks the given text."""
         pass
 
     def speak_windows(self, txt):
-        print(f'[SPEAKING]: {txt}')
+        try:
+            speech = gTTS(text=txt, lang=self.lang, tld=self.tld)
+            file = tempfile.NamedTemporaryFile(suffix='.mp3', delete=False)
+            filepath = file.name
+            file.close()
+            speech.save(filepath)
+            mixer.music.load(filepath)
+            mixer.music.play()
+            print('Speaking...')
+            while mixer.music.get_busy() == True:
+                continue
+            print('done')
+        except Exception as e:
+            print(e)
+        finally:
+            mixer.music.unload()
+            os.remove(filepath)
+                
 
     def speak_pi(self, txt):
         try:
-            temp_file = NamedTemporaryFile()
+            temp_file = tempfile.NamedTemporaryFile(suffix='.mp3')
             speech = gTTS(text=txt, lang=self.lang, tld=self.tld)
             speech.write_to_fp(temp_file)
-            pygame.mixer.music.load(temp_file.name)
-            pygame.mixer.music.play()
+            mixer.music.load(temp_file.name)
+            mixer.music.play()
             print('before busy')
-            while pygame.mixer.music.get_busy() == True:
+            while mixer.music.get_busy() == True:
                 continue
             print('done')
         finally:
             if temp_file is not None:
                 temp_file.close()
-            pass
 
     def __del__(self):
-        pygame.mixer.quit()
+        mixer.quit()
 
 
 if __name__ == "__main__":
-    import utils
+    import os
     txt = 'hello there. this is an example'
-    on_pi = utils.is_pi()
+    on_pi = os.name != 'nt'
     print('On raspberry pi: ', on_pi)
     tts = TextToSpeech(on_pi)
     tts.speak(txt)
