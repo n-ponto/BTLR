@@ -9,13 +9,38 @@ pyaudio, stream = wake.audio_collection.utils.create_stream(ap)
 wake_listener = wake.WakeListener()
 command_listener = CommandListener()
 sample_size = pyaudio.get_sample_size(ap.format)
-command_handler = CommandHandler(wake_listener, sample_size, ap.sample_rate, utils.is_pi(), True)
+command_handler = CommandHandler(
+    wake_listener, sample_size, ap.sample_rate, utils.is_pi(), True)
 state_asleep = True
 recognizer = sr.Recognizer()
 
-continue_listening = True
 
-while continue_listening:
+def speech_to_text(recognizer: sr.Recognizer, audio: bytes) -> str:
+    """
+    Converts speech to text.
+    Args:
+        recognizer: the speech recognizer
+        audio: the audio data to convert
+    Returns:
+        the text
+    """
+    if audio is None:
+        print('No command audio')
+        return ""
+    audio_data = sr.AudioData(audio, ap.sample_rate,
+                              pyaudio.get_sample_size(ap.format))
+    try:
+        text = recognizer.recognize_google(audio_data).lower()
+    except sr.UnknownValueError:
+        print('Could not understand audio')
+        return
+    except sr.RequestError as e:
+        print(f'Request error: {e}')
+        return
+    return text
+
+
+while True:
     data = stream.read(ap.chunk_size, False)
     if state_asleep:
         triggered = wake_listener.check_wake(data)
@@ -30,17 +55,6 @@ while continue_listening:
             command_audio = command_listener.get_audio()
 
             # Convert speech to text
-            try:
-                print('Waiting on speech recognition...')
-                audio_data = sr.AudioData(
-                    command_audio, ap.sample_rate, pyaudio.get_sample_size(ap.format))
-                text = recognizer.recognize_google(audio_data).lower()
-            except sr.UnknownValueError:
-                print('Could not understand audio')
-                continue
-            except sr.RequestError as e:
-                print(f'Request error: {e}')
-                continue
-
-            print(text)
-            command_handler.handle(text)
+            command_text = speech_to_text(recognizer, command_audio)
+            print(command_text)
+            command_handler.handle(command_text)
