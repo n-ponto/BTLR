@@ -7,8 +7,8 @@ MODEL_PATH = '../trained_model.tflite'
 
 if __name__ == '__main__':
     model = neuralmodels.get_model_wrapper(MODEL_PATH)
-    audio_params: parameters.AudioParams = parameters.mycroftParams
-    p, stream = audio_collection.utils.create_stream(ap=audio_params)
+    audio_params: parameters.AudioParams = parameters.DEFAULT_AUDIO_PARAMS
+    p, stream = audio_collection.utils.create_stream(audio_params=audio_params)
     wake_listener = listener.WakeListener(model=model, ap=audio_params)
 
     continue_listening = True

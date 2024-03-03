@@ -16,5 +16,5 @@ parser.add_argument(
 parser.add_argument('-n', '--negative', action='store_true', help='If the samples should go into the negative folder')
 parser.add_argument('-o', '--overwrite', action='store_true', help='If the samples should overwrite existing samples')
 args = parser.parse_args()
-sample_collector = audio_collection.SampleCollector(parameters.mycroftParams, parameters.FileParams, args.mode, args.negative, args.overwrite)
+sample_collector = audio_collection.SampleCollector(parameters.DEFAULT_AUDIO_PARAMS, parameters.FileParams, args.mode, args.negative, args.overwrite)
 sample_collector.run()

@@ -1,2 +1,2 @@
-from .samplecollector import SampleCollector
+from .sample_collector import SampleCollector
 from .utils import *

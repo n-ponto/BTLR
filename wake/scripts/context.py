@@ -1,6 +1,5 @@
 """
-This file is used to add the parent directory to the path so that the modules
-can be imported from the scripts directory.
+Add the parent directory to the path to import other modules.
 """
 import os
 import sys

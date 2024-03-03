@@ -1,10 +1,10 @@
 import pickle
 import os
 import librosa
-from wake.parameters import mycroftParams as ap
+from wake.parameters import DEFAULT_AUDIO_PARAMS as AP
 
-MIN_FILE_DURATION = ((ap.n_features - 1) * ap.hop_samples +
-                     ap.window_samples) / ap.sample_rate
+MIN_FILE_DURATION = ((AP.n_features - 1) * AP.hop_samples +
+                     AP.window_samples) / AP.sample_rate
 
 
 class DurationCache:

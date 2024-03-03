@@ -95,8 +95,7 @@ class AudioParams:
         return (self.buffer_samples - self.window_samples) // self.hop_samples + 1
 
 
-"""Parameters used by Mycroft precise"""
-mycroftParams = AudioParams(
+DEFAULT_AUDIO_PARAMS = AudioParams(
     chunk_size=1024,
     sample_rate=16000,
     window_t=0.1,
@@ -106,35 +105,3 @@ mycroftParams = AudioParams(
     n_filt=20,
     n_mfcc=13
 )
-
-"""Custom parameters"""
-customParams1 = AudioParams(
-    chunk_size=1024,
-    sample_rate=8000,  # Half the sample rate
-    window_t=0.1,
-    hop_t=0.05,
-    features_t=1.5,
-    n_fft=512,
-    n_filt=20,
-    n_mfcc=8  # Going to try only 8 MFCCs
-)
-
-"""Custom params 2"""
-customParams2 = AudioParams(
-    chunk_size=1024,
-    sample_rate=8000,  # Half the sample rate
-    window_t=0.1,
-    hop_t=0.05,
-    features_t=1.5,
-    n_fft=512,
-    n_filt=20,
-    n_mfcc=13
-)
-
-different_parameters: dict = {
-    'mycroft': mycroftParams,
-    'custom1': customParams1,
-    'custom2': customParams2
-}
-
-DEFAULT_AUDIO_PARAMS: AudioParams = mycroftParams

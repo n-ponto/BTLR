@@ -1,75 +1,60 @@
-"""
-Tool to collect positive negative samples for the wake word detector.
-
-Saves audio once a volume threshold has been exceeded. The user can just speak 
-different phrases and the program will save them to seperate files. Stops when 
-ctrl-c is pressed.
-"""
-
+"""Tool to collect samples for the wake word detector."""
 import audioop
 from enum import Enum
 import os
-from . import utils
 import threading
+from . import utils
 
-# How loud the audio needs to be to trigger activation
-THRESHOLD_MULTIPLIER = 1.5  # threshold louder than ambient noise
-THRESHOLD_SECONDS = 2  # time to calculate threshold
-THRESHOLD = 400
-
-# allowed time of silence in seconds to remain activated
-ALLOWED_SILENCE_SECS = 0.3
-MAX_SAMPLE_LEN_SEC = 1.5
-
-NOISE_FILE_LENGTH_SECONDS = 15
+THRESHOLD = 400  # How loud the audio needs to be to trigger activation
+ALLOWED_SILENCE_SECS = 0.3  # allowed time of silence in seconds to remain activated
+MAX_SAMPLE_LEN_SEC = 1.5  # maximum length of a single sample in seconds
+NOISE_FILE_LENGTH_SECONDS = 15  # maximum length of a single noise sample in seconds
 
 
 class CollectionMode (Enum):
-    """
-    Different user input modes for collecting data.
-    """
+    """Different user input modes for collecting data."""
     ENTER = "enter"
     THRESH = "threshold"
     NOISE = "noise"
 
 
 class SampleCollector:
-    """
-    Class used to collect audio samples from the user.
-    """
+    """Class used to collect audio samples from the user."""
 
     lock = threading.Lock()
     thread: threading.Thread = None
     thread_continue: bool = False
 
-    def __init__(self, audio_params, file_params, mode: CollectionMode, negative: bool = False, overwrite: bool = False):
-        # get list of modes
-        if not any([mode == m.value for m in CollectionMode]):
-            raise ValueError(
-                f"Invalid collection mode {mode}. Must be one of {CollectionMode}")
+    def __init__(self, audio_params, file_params, mode: CollectionMode | str, negative: bool = False, overwrite: bool = False):
+        """Initializes the sample collector.
+        Args:
+            audio_params: `parameters.AudioParams` the audio parameters
+            file_params: `parameters.FileParams` the file parameters
+            mode: the mode to collect samples in
+            negative: if the samples are negative (default False)
+            overwrite: if we should overwrite files in the save directory
+        """
+        if type(mode) == str:
+            mode = mode.lower()
+            modes = [m.value for m in CollectionMode]
+            if mode not in modes:
+                raise ValueError(f"Invalid mode {mode}, must be in {modes}.")
+            mode = CollectionMode(mode)
 
         self.mode = CollectionMode(mode)
         self.audio_params = audio_params
         self.file_params = file_params
-
-        if self.mode == CollectionMode.NOISE:
-            # When collecting noise, always negative samples
-            self.negative = True
-        else:
-            self.negative = negative
-
+        # When collecting noise, always negative samples
+        self.negative = True if self.mode == CollectionMode.NOISE else negative
         # Get file save info
         self.save_directory = self._get_directory()
         self.file_prefix = self._get_file_prefix()
         self.save_index = self._get_file_index(overwrite)
-
         self.sample_size = None
         self.stream = None
 
     def run(self):
-        """
-        Runs the sample collection process.
-        """
+        """Runs the sample collection process."""
         p, stream = utils.create_stream(self.audio_params)
         self.stream = stream
         self.sample_size = p.get_sample_size(self.audio_params.format)
@@ -84,10 +69,8 @@ class SampleCollector:
                 print("Press enter to save sample...")
                 self.collect_wakeword_enter()
             elif self.mode == CollectionMode.THRESH:
-                # rms_threshold = self.get_rms_threshold(stream)
-                rms_threshold = THRESHOLD
                 print("Saving samples automatically...")
-                self.collect_wakeword_threshold(rms_threshold)
+                self.collect_wakeword_threshold(THRESHOLD)
             elif self.mode == CollectionMode.NOISE:
                 print("Saving noise samples...")
                 self.collect_noise()
@@ -103,17 +86,13 @@ class SampleCollector:
                 stream.close()
 
     def _get_file_prefix(self) -> str:
-        """
-        Gets the prefix to use for saving files.
-        """
+        """Gets the prefix to use for saving files."""
         if self.mode == CollectionMode.NOISE:
             return 'noise'
         return self.file_params.neg_file_name if self.negative else self.file_params.pos_file_name
 
     def _get_directory(self) -> str:
-        """
-        Gets the directory to save samples in. If it doesn't exist, creates it.
-        """
+        """Gets the directory to save samples in. If it doesn't exist, creates it."""
         if not os.path.isdir(self.file_params.data_dir):
             os.mkdir(self.file_params.data_dir)
 
@@ -130,8 +109,12 @@ class SampleCollector:
         return fulldir
 
     def _get_file_index(self, overwrite) -> int:
-        """
-        Gets the index to start saving files at. If overwrite is true, returns 0.
+        """Gets the index to start saving files.
+        Args:
+            overwrite: if we should overwrite files in the save directory
+        Returns:
+            0 if `overwrite` is True, otherwise returns the highest index in the
+            save directory + 1.
         """
         if overwrite:
             return 0
@@ -140,16 +123,13 @@ class SampleCollector:
         return index
 
     def read_stream(self) -> bytes:
-        """
-        Reads a chunk from the stream.
-        """
+        """Reads a chunk of audio data from the stream."""
         return self.stream.read(self.audio_params.chunk_size, False)
 
     def collect_wakeword_threshold(self, rms_threshold) -> None:
-        """
-        Saves audio when volume exceeds the given threshold.
+        """Saves audio when volume exceeds the given threshold.
         Args:
-            rms_threshold: the threshold to activate at
+            rms_threshold: the threshold to activate recording
         """
         allowed_silence_frames = int(
             self.audio_params.sample_rate/self.audio_params.chunk_size*ALLOWED_SILENCE_SECS)
@@ -157,42 +137,42 @@ class SampleCollector:
         collecting = False
         frames = []
         i = 0
+        print('Saves samples when volume exceeds the given threshold.')
+        print('Press ctrl-c to stop...')
         while True:
             data = self.read_stream()
             rms = audioop.rms(data, 2)
             print(str(rms) + '   \t', end='')
-            if not collecting and rms > rms_threshold:
-                # New sound activates collection
-                print('activated\t', end='')
-                collecting = True
-            elif collecting and rms <= rms_threshold:
-                # Silence during collection
-                if silence_frames > allowed_silence_frames:
-                    # Exceeded allowed time, save the sample
-                    print('saving   \t', end='')
-                    self.save_data(b''.join(frames))
-                    i += 1
-                    collecting = False
-                    frames = []
+            if collecting:
+                if rms <= rms_threshold:  # Silence during collection
+                    if silence_frames > allowed_silence_frames:  # Exceeded allowed silence time, save the sample
+                        # Save the sample and reset
+                        print('saving   \t', end='')
+                        self.save_data(b''.join(frames))
+                        i += 1
+                        collecting = False
+                        frames = []
+                        silence_frames = 0
+                    else:  # Still within allowed silence time
+                        silence_frames += 1  # Record that it was silent
+                else:  # If there was a sound, reset silence frames
                     silence_frames = 0
-                else:
-                    # Record that it was silent
-                    silence_frames += 1
-            elif collecting and rms > rms_threshold:
-                # If there was a sound, reset silence frames
-                silence_frames = 0
+            else:  # Not collecting
+                if rms > rms_threshold:
+                    # New sound activates collection
+                    print('activated\t', end='')
+                    collecting = True
+                    frames.append(data)
 
             print('', end='\r')
             if collecting:
                 frames.append(data)
             else:
-                # Always keep one prefix frame
+                # Always keep one prefix frame before noise starts
                 frames = [data]
 
     def collect_wakeword_enter(self) -> None:
-        """
-        Saves audio when the user presses enter.
-        """
+        """Saves audio when the user presses enter."""
         allowed_chunks = int(MAX_SAMPLE_LEN_SEC *
                              self.audio_params.sample_rate/self.audio_params.chunk_size)
 
@@ -219,9 +199,7 @@ class SampleCollector:
             self.save_data(data)
 
     def collect_noise(self) -> None:
-        """
-        Collects longer samples of noise to use as negative training samples.
-        """
+        """Collects longer samples of noise to use as negative training samples."""
         chunks_per_file = self.audio_params.sample_rate//self.audio_params.chunk_size * \
             NOISE_FILE_LENGTH_SECONDS
         frames = []
@@ -242,26 +220,9 @@ class SampleCollector:
                 self.save_data(joined_frames)
 
     def save_data(self, data):
-        """
-        Saves the given data to a file.
-        """
+        """Saves the given audio data to a wav file."""
         filename = f'{self.file_prefix}-{self.save_index:04d}.wav'
         filename = os.path.join(self.save_directory, filename)
         self.save_index += 1
         utils.save_wav_file(filename, self.sample_size,
                             self.audio_params.sample_rate, data)
-
-    @staticmethod
-    def get_rms_threshold(stream) -> int:
-        print("Please stay quiet...")
-        thresh_steps = int(self.audio_params.sample_rate /
-                           self.audio_params.chunk_size*THRESHOLD_SECONDS)
-        thresh_max = None
-        for _ in range(thresh_steps):
-            data = stream.read(self.audio_params.chunk_size)
-            rms = audioop.rms(data, 2)
-            if not thresh_max or thresh_max < rms:
-                thresh_max = rms
-        rms_threshold = thresh_max * THRESHOLD_MULTIPLIER
-        print(f'threshold is {rms_threshold}')
-        return rms_threshold

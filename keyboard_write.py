@@ -1,18 +1,24 @@
+from pynput.mouse import Listener
+import threading
 import keyboard
 import pyautogui
 from time import sleep
 
 DELAY = 0.01
-LONG_DELAY = 0.2
+LONG_DELAY = 0.4
+
+SOURCE_FILE = 'keyboard.txt'
+SOURCE_FILE = r'C:\Users\noah\repos\BTLR\wake\audio_collection\sample_collector.py'
 
 continue_running = True
+
 
 def simulate():
     # Read from the keyboard file
     def read_keyboard_file():
-        with open('keyboard.txt', 'r') as file:
+        with open(SOURCE_FILE, 'r') as file:
             return file.read().strip()
-        
+
     txt = read_keyboard_file()
     keyboard.press_and_release('alt + tab')
     sleep(0.5)
@@ -30,15 +36,15 @@ def simulate():
         num_tabs += num_spaces // 4
         line = line.lstrip()
 
-        if 'return ' in prev_line:
+        # Check for special termination cases
+        if prev_line.startswith('return') or prev_line.startswith('raise') or any([prev_line == word for word in ['pass', 'break', 'continue']]): 
             prev_tabs -= 1
 
         comment_start = False
         if not inside_comment and line.startswith("\"\"\""):
             comment_start = True
             line = line.lstrip("\"")
-            inside_comment = True
-            
+
         comment_end = False
         # Check if there's an ending comment
         if line.endswith("\"\"\""):
@@ -47,7 +53,7 @@ def simulate():
             comment_end = True
 
         add_tabs = 0
-        if prev_line.endswith(':'):
+        if not inside_comment and prev_line.endswith(':'):
             print('not changing tab')
             pass
         elif prev_line.count('(') > prev_line.count(')'):
@@ -60,7 +66,8 @@ def simulate():
         # Else if the number of tabs is less than the previous number of tabs
         elif num_tabs < prev_tabs:
             # Add backspaces to the line
-            [keyboard.press_and_release("backspace") for _ in range(prev_tabs - num_tabs)]
+            [keyboard.press_and_release("backspace")
+             for _ in range(prev_tabs - num_tabs)]
 
         # Add the tabs
         [keyboard.press_and_release("tab") for _ in range(add_tabs)]
@@ -75,7 +82,7 @@ def simulate():
         # Print the line
         sleep(DELAY)
         pyautogui.write(line, DELAY)
-        print(line, '\t', num_tabs)
+        print("\""+line+"\"", '\t', num_tabs, add_tabs, prev_tabs, inside_comment)
 
         if comment_end:
             sleep(DELAY)
@@ -92,11 +99,14 @@ def simulate():
         prev_tabs = num_tabs
         prev_line = line
 
+        if comment_start and not comment_end:
+            inside_comment = True
+
+
 # Start simulate in another thread
-import threading
-from pynput.mouse import Listener
 continue_running = True
 write_thread = threading.Thread(target=simulate, daemon=True)
+
 
 def on_click(x, y, button, pressed):
     global continue_running
@@ -104,14 +114,15 @@ def on_click(x, y, button, pressed):
     write_thread.join()
     print('Thread finished')
     exit()
-    
+
+
 listener = Listener(on_click=on_click)
 listener.start()
 print('Started listener')
 write_thread.start()
 print('Started writing')
 
-while(continue_running):
+while (continue_running):
     sleep(0.1)
 
 listener.stop()

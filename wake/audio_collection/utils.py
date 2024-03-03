@@ -1,6 +1,4 @@
 import pyaudio
-from wake import parameters
-
 
 def save_wav_file(filename: str, sample_size: int, sample_rate: int, data: bytes) -> None:
     """
@@ -19,20 +17,20 @@ def save_wav_file(filename: str, sample_size: int, sample_rate: int, data: bytes
     wf.close()
 
 
-def create_stream(ap: parameters.AudioParams) -> (pyaudio.PyAudio, pyaudio.Stream):
+def create_stream(audio_params) -> (pyaudio.PyAudio, pyaudio.Stream):
     """
     Creates a pyaudio stream to record audio.
     Args:
-        ap: the audio parameters
+        audio_params: `parameters.AudioParams` the audio parameters
     Returns:
         the pyaudio object and the stream object
     """
     p = pyaudio.PyAudio()
     stream = p.open(
-        rate=ap.sample_rate,
+        rate=audio_params.sample_rate,
         channels=1,
-        format=ap.format,
-        frames_per_buffer=ap.chunk_size,
+        format=audio_params.format,
+        frames_per_buffer=audio_params.chunk_size,
         input=True
     )
     return p, stream
