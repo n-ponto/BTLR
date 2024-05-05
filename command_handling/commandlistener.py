@@ -5,13 +5,13 @@ from wake.parameters import DEFAULT_AUDIO_PARAMS as AP
 VOL_THRESH = 200  # minimum volume to start listening
 
 END_QUIET_T = 1.0  # allowed silence while continuing to listen in seconds
-END_QUIET_FRAMES = int(END_QUIET_T * AP.sample_rate / AP.chunk_size)
+END_QUIET_FRAMES = int(END_QUIET_T * AP.chunks_per_sec)
 
 BEG_QUIET_T = 5  # allowed silence while waiting for command in seconds
-BEG_QUIET_FRAMES = int(BEG_QUIET_T * AP.sample_rate / AP.chunk_size)
+BEG_QUIET_FRAMES = int(BEG_QUIET_T * AP.chunks_per_sec)
 
 MAX_COMMAND_T = 10  # how long the command can be in seconds
-MAX_COMMAND_FRAMES = int(MAX_COMMAND_T * AP.sample_rate / AP.chunk_size)
+MAX_COMMAND_FRAMES = int(MAX_COMMAND_T * AP.chunks_per_sec)
 
 # Path to the sound to play when listening
 WAKE_AUDIO_PATH = "./notification.mp3"

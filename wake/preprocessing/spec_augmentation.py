@@ -8,8 +8,7 @@ https://www.kaggle.com/code/davids1992/specaugment-quick-implementation
 import numpy as np
 
 def spec_augment(mfcc: np.ndarray, num_mask=2, freq_masking_max_percentage=0.15, time_masking_max_percentage=0.3):
-    """
-    Applies spectrogram augmentation to the MFCC
+    """Applies spectrogram augmentation to the MFCC
     Args:
         mfcc: MFCC data
         num_mask: number of masks to apply

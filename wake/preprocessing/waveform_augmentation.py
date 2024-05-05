@@ -3,8 +3,7 @@ import librosa
 
 
 def noise_injection(audio: np.ndarray, noise_factor=0.005):
-    """
-    Adds random noise to the audio
+    """Adds random noise to the audio
     Args:
         audio: raw audio data
         noise_factor: strength of the noise
@@ -17,32 +16,30 @@ def noise_injection(audio: np.ndarray, noise_factor=0.005):
 
 
 def change_speed(audio: np.ndarray, speed_factor=0.9):
-    """
-    Changes the speed of the audio. A speed_factor of 1.0 will not change the speed.
+    """Changes the speed of the audio. 
+    A speed_factor of 1.0 will not change the speed.
     """
     return librosa.effects.time_stretch(audio, rate=speed_factor)
 
 
 def change_pitch(audio, sample_rate: int, pitch_factor=0.4):
-    """
-    Changes the pitch of the audio. A pitch_factor of 0.0 will not change the pitch.
+    """Changes the pitch of the audio. 
+    A pitch_factor of 0.0 will not change the pitch.
     """
     return librosa.effects.pitch_shift(audio, sr=sample_rate, n_steps=pitch_factor)
 
 
 if __name__ == "__main__":
-    print('demo of waveform_augmentation.py')
     import sounddevice as sd
     import time
-
-    # Get the default audio parameters
     import sys
     import os
-    path_to_wake = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..'))
+    path_to_wake = os.path.join(os.path.dirname(__file__), '..')
     sys.path.append(path_to_wake)
     from parameters import DEFAULT_AUDIO_PARAMS
     sample_rate = DEFAULT_AUDIO_PARAMS.sample_rate
+
+    print(f'demo of {os.path.basename(__file__)}')
     print(f'sample_rate = {sample_rate}')
 
     # load audio

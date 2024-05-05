@@ -5,7 +5,13 @@ import tensorflow as tf
 from tensorflow import keras
 
 
-def convert_model(model_path: str, optimizations: list = None, save_path: str = None):
+def convert_model(model_path: str, save_path: str = None):
+    """Converts a model from Keras into TensorFlow Lite format.
+    Args:
+        model_path: Path to the Keras model
+        optimizations: List of optimizations to apply to the model
+        save_path: Path to save the model to. If None, saves to the same directory as the model.
+    """
     # Load the model
     keras_model = keras.models.load_model(model_path)
     print('Loaded model')
@@ -18,8 +24,6 @@ def convert_model(model_path: str, optimizations: list = None, save_path: str = 
         # Below needs to be disabled to run on raspberry pi
         # tf.lite.OpsSet.SELECT_TF_OPS  # enable TensorFlow ops.
     ]
-    if optimizations is not None and len(optimizations) > 0:
-        converter.optimizations = optimizations
 
     tflite_model = converter.convert()
 

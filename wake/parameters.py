@@ -3,25 +3,26 @@ import pyaudio
 
 
 class FileParams:
-    data_dir = '../data'
-    log_dir = '../log'
-    pos_sample_dir = 'pos'
-    neg_sample_dir = 'neg'
+    """Holds the parameters for file paths and directories."""
 
-    pos_file_name = 'pos'
-    neg_file_name = 'neg'
-
-    default_model_path = 'wake/trained_model.tflite'
+    data_dir = '.\\data'  # Directory containing the audio samples
+    log_dir = './log'  # Directory to save the training logs
+    pos_sample_name = 'pos'  # Directory containing the positive samples
+    neg_sample_name = 'neg'  # Directory containing the negative samples
+    noise_sample_name = 'noise'  # Directory containing the noise samples
+    default_model_path = 'wake/trained_model.tflite'  # Path to the default model
 
 
 class AudioParams:
     """Holds the parameters for audio sampling and MFCC calculation."""
+    
+    """The format of the audio samples."""
     format = pyaudio.paInt16
 
     """Using mono audio."""
     channels = 1
 
-    """The number of samples to record each time."""
+    """The number of samples returned each time we read from the audio stream."""
     chunk_size: int
 
     """The number of samples to record each second."""
@@ -36,14 +37,14 @@ class AudioParams:
     """Length of the MFCC hop in seconds."""
     hop_t: float
 
+    """Number of MFCCs to get from each window."""
+    n_mfcc: int
+
     """Number of samples to use in each FFT calculation."""
     n_fft: int
 
     """Number of filters to use in the MFCC calculation."""
     n_filt: int
-
-    """Number of MFCCs to get from each window."""
-    n_mfcc: int
 
     def __init__(self,
                  # Parameters for audio recording
@@ -77,7 +78,7 @@ class AudioParams:
         return ceil(self.hop_t * self.sample_rate)
 
     @property
-    def buffer_samples(self):
+    def feature_samples(self):
         """Samples used to create each input to the neural network."""
         samples = ceil(self.features_t * self.sample_rate)
         # Make sure it's evenly divisible by the hop size
@@ -92,7 +93,12 @@ class AudioParams:
         This is the number of windows that fit inside the features_t with the
         given hop_t.
         """
-        return (self.buffer_samples - self.window_samples) // self.hop_samples + 1
+        return (self.feature_samples - self.window_samples) // self.hop_samples + 1
+
+    @property
+    def chunks_per_sec(self):
+        """The number of chunks recorded each second."""
+        return self.sample_rate / self.chunk_size
 
 
 DEFAULT_AUDIO_PARAMS = AudioParams(

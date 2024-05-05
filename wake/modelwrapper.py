@@ -1,18 +1,13 @@
-"""
-Makes it easier to use different models for prediction without changing the code.
-"""
 import numpy as np
 
 
 class ModelWrapper:
-    """
-    Wrapper around the model to make it easier to use different models for 
+    """Wrapper around the model to make it easier to use different models for 
     prediction without changing the code.
     """
 
     def predict(self, input) -> float:
-        """
-        Predicts if the input corresponds to the wake word.
+        """Predicts if the input corresponds to the wake word.
         Args:
             input: the input to the model
         Returns:
@@ -21,40 +16,8 @@ class ModelWrapper:
         raise NotImplementedError()
 
 
-def import_is_pi():
-    """
-    Imports is_pi from utils. This is done in a function so that the import is only done when needed.
-    """
-    import sys
-    import os
-    path_to_wake = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', '..'))
-    sys.path.append(path_to_wake)
-    from utils import is_pi
-    return is_pi
-
-
-def get_model_wrapper(model_path: str) -> ModelWrapper:
-    """
-    Returns a model wrapper object based on the model path.
-    """
-    import os
-    is_pi = import_is_pi()
-    running_on_pi = is_pi()
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f'Could not find model: {model_path}')
-    if model_path.endswith('.tflite'):
-        return TFLiteModelWrapper(model_path, running_on_pi)
-    else:
-        assert (
-            not running_on_pi), f'Cannot use Keras model on raspberry pi: {model_path}.\nPlease convert the model to a tensorflow lite model.'
-        return KerasModelWrapper(model_path)
-
-
 class KerasModelWrapper(ModelWrapper):
-    """
-    Predictor for a keras model
-    """
+    """Predictor for a keras model"""
 
     def __init__(self, model_path):
         import keras
@@ -67,9 +30,7 @@ class KerasModelWrapper(ModelWrapper):
 
 
 class TFLiteModelWrapper(ModelWrapper):
-    """
-    Predictor for a tensorflow lite model
-    """
+    """Predictor for a tensorflow lite model"""
 
     def __init__(self, model_path: str, on_pi: bool):
         # Load the tensorflow package depending on the platform
@@ -81,8 +42,7 @@ class TFLiteModelWrapper(ModelWrapper):
 
     def predict(self, input) -> float:
         # Plug the input into the interpreter
-        self._interpreter.set_tensor(
-            self._input_index, input.astype(np.float32)[np.newaxis])
+        self._interpreter.set_tensor(self._input_index, input.astype(np.float32)[np.newaxis])
 
         # Predict using the interpreter
         self._interpreter.invoke()
@@ -103,3 +63,18 @@ class TFLiteModelWrapper(ModelWrapper):
             import tensorflow as tf
             tflite = tf.lite
         return tflite
+
+
+def get_model_wrapper(model_path: str) -> ModelWrapper:
+    """Returns a `ModelWrapper` based on the model file type."""
+    import os
+    running_on_pi = os.name != 'nt'
+
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f'Could not find model: {model_path}')
+    if model_path.endswith('.tflite'):
+        return TFLiteModelWrapper(model_path, running_on_pi)
+    else:
+        assert (
+            not running_on_pi), f'Cannot use Keras model on raspberry pi: {model_path}.\nPlease convert the model to a tensorflow lite model.'
+        return KerasModelWrapper(model_path)

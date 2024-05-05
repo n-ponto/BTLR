@@ -1,2 +1,2 @@
-from .dataloader import DataLoader
-from .datasplitter import DataSplitter
+from .data_loader import DataLoader
+from .data_splitter import DataSplitter, DATASETS

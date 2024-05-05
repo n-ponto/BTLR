@@ -6,9 +6,10 @@ Plays each file and asks if it should be deleted.
 
 from pydub import AudioSegment
 from pydub.playback import play
+from parameters import FileParams
 import os
 
-dir = "..\\data\\pos"
+dir = os.path.join('.', FileParams.data_dir, FileParams.pos_sample_name)
 
 print(f'Press enter to keep the file, press any other key then enter to delete it.')
 for file in os.listdir(dir):
