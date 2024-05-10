@@ -7,9 +7,9 @@ import time
 from . import utils
 
 THRESHOLD = 600  # How loud the audio needs to be to trigger activation
-ALLOWED_SILENCE_SECS = 0.3  # allowed time of silence in seconds to remain activated
+ALLOWED_SILENCE_SEC = 0.3  # allowed time of silence in seconds to remain activated
 MIN_SAMPLE_LEN_SEC = 0.5  # minimum length of a single sample in seconds
-NOISE_FILE_LENGTH_SECONDS = 15  # maximum length of a single noise sample in seconds
+NOISE_FILE_LEN_SEC = 15  # maximum length of a single noise sample in seconds
 
 
 class CollectionMode (Enum):
@@ -98,7 +98,7 @@ class SampleCollector:
         Args:
             rms_threshold: the threshold to activate recording
         """
-        allowed_silence_frames = int(ALLOWED_SILENCE_SECS * self.ap.chunks_per_sec)
+        allowed_silence_frames = int(ALLOWED_SILENCE_SEC * self.ap.chunks_per_sec)
         silence_frames = 0
         collecting = False
         frames = []
@@ -113,6 +113,7 @@ class SampleCollector:
             print(str(volume) + '   \t', end='')
             if collecting:
                 if volume <= rms_threshold:  # Silence during collection
+                    silence_frames += 1  # Record that it was silent
                     if silence_frames > allowed_silence_frames:  # Exceeded allowed silence time, save the sample
                         # Save the sample and reset
                         print('saving   \t', end='')
@@ -121,15 +122,12 @@ class SampleCollector:
                         collecting = False
                         frames = []
                         silence_frames = 0
-                    else:  # Still within allowed silence time
-                        silence_frames += 1  # Record that it was silent
                 else:  # If there was a sound, reset silence frames
                     silence_frames = 0
-            else:  # Not collecting
-                if volume > rms_threshold:
-                    # New sound activates collection
-                    print('activated\t', end='')
-                    collecting = True
+            elif volume > rms_threshold:  # Not collecting and there's sound
+                # New sound activates collection
+                print('activated\t', end='')
+                collecting = True
 
             print('', end='\r')
             if collecting:
@@ -168,7 +166,7 @@ class SampleCollector:
 
     def collect_noise(self) -> None:
         """Collects longer samples of noise to use as negative training samples."""
-        chunks_per_file = int(NOISE_FILE_LENGTH_SECONDS * self.ap.chunks_per_sec)
+        chunks_per_file = int(NOISE_FILE_LEN_SEC * self.ap.chunks_per_sec)
         frames = []
         try:
             while True:

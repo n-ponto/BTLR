@@ -2,7 +2,7 @@ import numpy as np
 from sonopy import mfcc_spec
 
 import parameters
-from modelwrapper import ModelWrapper
+from modelwrapper import ModelWrapper, get_model_wrapper
 from .activationtrigger import ActivationTrigger
 
 
@@ -29,7 +29,7 @@ class WakeListener:
             self._model = model
         else:
             print(f'loading wake model from default path {parameters.FileParams.default_model_path}')
-            self._model = neuralmodels.get_model_wrapper(parameters.FileParams.default_model_path)
+            self._model = get_model_wrapper(parameters.FileParams.default_model_path)
 
     def check_wake(self, data: bytes) -> bool:
         """Checks if the data is the wake word.

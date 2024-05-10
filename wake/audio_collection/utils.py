@@ -1,8 +1,7 @@
 import pyaudio
 
 def save_wav_file(filename: str, sample_size: int, sample_rate: int, data: bytes) -> None:
-    """
-    Saves a wav file.
+    """Saves a wav file.
     Args:
         filename: the name of the file to save
         sample_size: the size of each sample in bytes
@@ -18,8 +17,7 @@ def save_wav_file(filename: str, sample_size: int, sample_rate: int, data: bytes
 
 
 def create_stream(audio_params) -> (pyaudio.PyAudio, pyaudio.Stream):
-    """
-    Creates a pyaudio stream to record audio.
+    """Creates a pyaudio stream to record audio.
     Args:
         audio_params: `parameters.AudioParams` the audio parameters
     Returns:
@@ -37,8 +35,7 @@ def create_stream(audio_params) -> (pyaudio.PyAudio, pyaudio.Stream):
 
 
 def get_greatest_index(dir: str) -> int:
-    """
-    Gets the largets file index in the directory.
+    """Gets the largest file index in the directory.
     Args:
         dir: the directory to search
     Returns:

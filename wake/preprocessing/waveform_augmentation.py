@@ -44,8 +44,7 @@ if __name__ == "__main__":
 
     # load audio
     path = os.path.join(path_to_wake, 'data', 'pos', 'pos-0000.wav')
-    assert (os.path.exists(path) and os.path.isfile(
-        path)), f'path {path} does not exist'
+    assert (os.path.exists(path) and os.path.isfile(path)), f'path {path} does not exist'
     audio, _ = librosa.load(path, sr=sample_rate)
     print('loaded audio')
     audio = np.squeeze(audio)

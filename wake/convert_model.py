@@ -46,4 +46,4 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('model_path', type=str, help='Path to the keras model')
     args = parser.parse_args()
-    convert_model(args.model_path, [tf.lite.Optimize.DEFAULT], 'trained_model.tflite')
+    convert_model(args.model_path, 'trained_model.tflite')

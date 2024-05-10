@@ -95,8 +95,7 @@ class DataSplitter:
             files = [os.path.join(subdir, x) for x in files]
 
             # Only include files with valid extensions
-            files = [x for x in files if os.path.isfile(
-                x) and has_valid_extension(x)]
+            files = [x for x in files if os.path.isfile(x) and has_valid_extension(x)]
             if len(files) == 0:
                 print(f'ignoring: {subdir} has no valid files')
                 continue
@@ -210,7 +209,7 @@ class DataSplitter:
             cnt_smpls = train_samples[subdir]
             prcnt_total = cnt_smpls / tot_cnt_trn_smpls if tot_cnt_trn_smpls > 0 else 0
             print(f'\nInitially {subdir} makes up {round(prcnt_total * 100, 2)}% of total')
-            
+
             multiplier = round(count_other_samples / cnt_smpls)
             print(f'{subdir} multiplier: {multiplier}')
 
