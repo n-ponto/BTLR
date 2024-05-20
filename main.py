@@ -50,11 +50,14 @@ while True:
     else:
         command_done = command_listener.listen(data)
         if command_done:
-            print('Command done!')
+            print('Done listening for command')
             state_asleep = True  # Go back to sleep after processing command
             command_audio = command_listener.get_audio()
 
             # Convert speech to text
             command_text = speech_to_text(recognizer, command_audio)
             print(command_text)
-            command_handler.handle(command_text)
+            try:
+                command_handler.handle(command_text)
+            except Exception as e:
+                print(f'Error handling command:\n{e}')

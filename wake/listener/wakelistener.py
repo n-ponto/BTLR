@@ -1,8 +1,8 @@
 import numpy as np
 from sonopy import mfcc_spec
 
-import parameters
-from modelwrapper import ModelWrapper, get_model_wrapper
+from wake.parameters import AudioParams, FileParams, DEFAULT_AUDIO_PARAMS
+from wake.modelwrapper import ModelWrapper, get_model_wrapper
 from .activationtrigger import ActivationTrigger
 
 
@@ -14,7 +14,7 @@ class WakeListener:
 
     def __init__(self,
                  model: ModelWrapper = None,
-                 ap: parameters.AudioParams = parameters.DEFAULT_AUDIO_PARAMS):
+                 ap: AudioParams = DEFAULT_AUDIO_PARAMS):
         self.trigger = ActivationTrigger()
         # Initialize the audio window to empty
         self.audio_buffer = np.array([])
@@ -28,8 +28,8 @@ class WakeListener:
         if model is not None:
             self._model = model
         else:
-            print(f'loading wake model from default path {parameters.FileParams.default_model_path}')
-            self._model = get_model_wrapper(parameters.FileParams.default_model_path)
+            print(f'loading wake model from default path {FileParams.default_model_path}')
+            self._model = get_model_wrapper(FileParams.default_model_path)
 
     def check_wake(self, data: bytes) -> bool:
         """Checks if the data is the wake word.

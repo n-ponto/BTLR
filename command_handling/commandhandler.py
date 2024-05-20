@@ -2,13 +2,14 @@ import datetime
 from .activationsaver import ActivationSaver
 from .texttospeech import TextToSpeech
 from .weather import Weather
+from .blinds import Blinds
 
 
 class Keywords:
     stop: set = {'stop', 'quit', 'exit', 'terminate', 'end', 'finish', 'done'}
-    false_activation: set = {f'false {w}' for w in [
-        'wake', 'activation', 'trigger']}
+    false_activation: set = {f'false {w}' for w in ['wake', 'activation', 'trigger']}
     weather: set = {'weather', 'temperature'}
+    blinds: set = {'blinds', 'blind', 'window', 'windows'}
 
 
 class CommandHandler:
@@ -41,6 +42,9 @@ class CommandHandler:
         elif self._keywords_in_command(command_text, Keywords.weather):
             weather = self.weather.get_weather()
             self.tts.speak(weather)
+        elif self._keywords_in_command(command_text, Keywords.blinds):
+            output: str = Blinds.handle(command_text)
+            self.tts.speak(output)
         elif 'date' in command_text:
             today = datetime.date.today()
             readable_date = today.strftime("%B %d, %Y")
@@ -63,7 +67,7 @@ class CommandHandler:
         """
         if self.wake_listener is None or self.save_activations is False:
             return
-        activation_audio = self.wake_listener.get_last_activation()
+        activation_audio = self.wake_listener.last_activation_audio()
         self.activation_saver.save(activation_audio, correct_activation)
 
     @staticmethod
